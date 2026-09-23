@@ -29,23 +29,28 @@ st.set_page_config(
 st.markdown(
     """
     <style>
-    /* Oculta o cabeçalho superior e o menu */
-    header { visibility: hidden !important; display: none !important; }
+    /* Oculta o cabeçalho superior e menus do Streamlit */
+    header { display: none !important; }
     [data-testid="stHeader"] { display: none !important; }
-    #MainMenu { visibility: hidden !important; display: none !important; }
+    #MainMenu { display: none !important; }
     
-    /* Oculta o rodapé e badges */
-    footer { visibility: hidden !important; display: none !important; }
+    /* Oculta rodapé e barra de embed */
+    footer { display: none !important; }
     [data-testid="stFooter"] { display: none !important; }
+    [data-testid="stBottom"] { display: none !important; }
+    .stAppEmbedFooter { display: none !important; }
+    div[class*="stAppEmbedFooter"] { display: none !important; }
     
-    /* Oculta widgets do status do desenvolvedor */
+    /* Oculta botões do desenvolvedor, widget de status e avatar */
     [data-testid="stStatusWidget"] { display: none !important; }
     [data-testid="stAppViewerToolbar"] { display: none !important; }
     .stAppToolbar { display: none !important; }
+    div[class*="viewerBadge"] { display: none !important; }
+    iframe[title="streamlit_app"] { margin-bottom: -60px !important; }
     
-    /* Ajustes das margens superiores para preencher a tela */
-    .block-container { padding-top: 1.5rem !important; }
-    [data-testid="stSidebar"] { padding-top: 1.5rem !important; }
+    /* Ajusta as margens para ocupar a tela toda */
+    .block-container { padding-top: 1rem !important; padding-bottom: 0rem !important; }
+    [data-testid="stSidebar"] { padding-top: 1rem !important; }
     [data-testid="stSidebarHeader"] { display: none !important; }
     </style>
     """,
