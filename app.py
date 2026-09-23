@@ -53,10 +53,32 @@ st.markdown(
 st.markdown(
     """
     <style>
-    [data-testid="stSidebar"] { padding-top: 1.5rem !important; }
-    [data-testid="stSidebarHeader"] { display: none !important; padding: 0px !important; }
-    [data-testid="stSidebarUserContent"] { padding-top: 0rem !important; }
-    .block-container { padding-top: 3rem !important; }
+    /* Oculta o cabeçalho, rodapé e menus padrão */
+    header { visibility: hidden !important; height: 0px !important; }
+    footer { visibility: hidden !important; height: 0px !important; }
+    #MainMenu { visibility: hidden !important; }
+    
+    /* Oculta a barra de ferramentas do desenvolvedor / GitHub no topo */
+    [data-testid="stHeader"] { display: none !important; }
+    [data-testid="stAppToolbar"] { display: none !important; }
+    
+    /* Oculta o widget de status, botão vermelho do Manage App e o avatar do usuário no canto inferior */
+    [data-testid="stStatusWidget"] { display: none !important; }
+    [data-testid="stAppViewerToolbar"] { display: none !important; }
+    .stAppToolbar { display: none !important; }
+    div[class*="viewerBadge"] { display: none !important; }
+    div[class*="styles_viewerBadge"] { display: none !important; }
+    iframe[title="streamlit_app"] { margin-bottom: -50px !important; }
+    
+    /* Remove botões flutuantes na parte inferior do servidor */
+    #root > div:nth-child(1) > div > div > div > div > section > div { padding-top: 0rem; }
+    button[title="Manage app"] { display: none !important; }
+    .st-emotion-cache-15ec357 { display: none !important; }
+    
+    /* Ajustes finais de margem da tela */
+    .block-container { padding-top: 1rem !important; }
+    [data-testid="stSidebar"] { padding-top: 1rem !important; }
+    [data-testid="stSidebarHeader"] { display: none !important; }
     </style>
     """,
     unsafe_allow_html=True
