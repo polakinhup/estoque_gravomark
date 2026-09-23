@@ -6,8 +6,7 @@ import io
 import re
 import time
 from datetime import datetime
-from google.oauth2.service_account import Credentials
-from google.oauth2.credentials import Credentials as UserCredentials
+from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
@@ -31,24 +30,55 @@ SCOPES = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapi
 
 @st.cache_resource
 def conectar_google():
-    # 1. Tenta carregar credenciais de Service Account via Secrets (Modo Nuvem / Streamlit Cloud)
-    if "gcp_service_account" in st.secrets:
-        creds = Credentials.from_service_account_info(
-            st.secrets["gcp_service_account"],
-            scopes=SCOPES
-        )
-    # 2. Tenta usar token local se existir
-    elif os.path.exists('token.json'):
-        creds = UserCredentials.from_authorized_user_file('token.json', SCOPES)
+    creds = None
+    if os.path.exists('token.json'):
+        try:
+            creds = Credentials.from_authorized_user_file('token.json', SCOPES)
+        except Exception:
+            os.remove('token.json')
+            creds = None
+
+    if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-    # 3. Fallback Local
-    elif os.path.exists('client_secret.json'):
-        flow = InstalledAppFlow.from_client_secrets_file('client_secret.json', SCOPES)
-        creds = flow.run_local_server(port=0)
-    else:
-        st.error("Credenciais de acesso não foram encontradas no servidor.")
-        st.stop()
+            try:
+                creds.refresh(Request())
+            except Exception:
+                if os.path.exists('token.json'):
+                    os.remove('token.json')
+                
+                if "client_secret" in st.secrets:
+                    client_config = {"installed": dict(st.secrets["client_secret"])}
+                    flow = InstalledAppFlow.from_client_config(client_config, SCOPES)
+                elif os.path.exists('client_secret.json'):
+                    flow = InstalledAppFlow.from_client_secrets_file('client_secret.json', SCOPES)
+                else:
+                    st.error("Credenciais client_secret não foram encontradas.")
+                    st.stop()
+                creds = flow.run_local_server(port=0, open_browser=False)
+        else:
+            if "client_secret" in st.secrets:
+                client_config = {"installed": dict(st.secrets["client_secret"])}
+                flow = InstalledAppFlow.from_client_config(client_config, SCOPES)
+            elif os.path.exists('client_secret.json'):
+                flow = InstalledAppFlow.from_client_secrets_file('client_secret.json', SCOPES)
+            else:
+                st.error("Credenciais client_secret não foram encontradas.")
+                st.stop()
+
+            try:
+                creds = flow.run_local_server(port=0, open_browser=False)
+            except Exception:
+                auth_url, _ = flow.authorization_url(prompt='consent')
+                st.info("É necessária a autorização do Google para o primeiro acesso:")
+                st.markdown(f"[🔗 Clique aqui para autorizar a ligação com o Google Sheets]({auth_url})")
+                st.stop()
+
+        if creds:
+            try:
+                with open('token.json', 'w') as token:
+                    token.write(creds.to_json())
+            except Exception:
+                pass
 
     client_sheets = gspread.authorize(creds)
     drive_service = build('drive', 'v3', credentials=creds)
@@ -58,7 +88,7 @@ client_sheets, drive_service = conectar_google()
 
 # --- COLE OS SEUS IDs REAIS AQUI ---
 SPREADSHEET_ID = "1mnR2hraUpJm5KIQRLk4JOCU35zTKgPaelr02CjxJ248"
-FOLDER_ENTRADA_ID = "14b0Dp4LEEftPMIUkVxDd_0JFKGJhRbWL" # Mantido o ID do seu último arquivo
+FOLDER_ENTRADA_ID = "14b0Dp4LEEftPMIUkVxDd_0JFKGJhRbWL"
 FOLDER_SAIDA_ID = "1iFmbto3DIRKW83SdON-QaMXTDrfrRmcx"
 
 @st.cache_data(ttl=30)
@@ -732,4 +762,4 @@ elif aba == "🛠️ Área Técnica":
             else:
                 st.info("Nenhuma peça atualmente na área técnica.")
         else:
-            st.info("Nenhum registro de área técnica.")
+            st.info("Nenum registro de área técnica.")
