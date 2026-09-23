@@ -45,10 +45,20 @@ def conectar_google():
             except Exception:
                 if os.path.exists('token.json'):
                     os.remove('token.json')
-                flow = InstalledAppFlow.from_client_secrets_file('client_secret.json', SCOPES)
+                
+                # Tenta ler do client_secret local ou das Secrets do Streamlit Cloud
+                if os.path.exists('client_secret.json'):
+                    flow = InstalledAppFlow.from_client_secrets_file('client_secret.json', SCOPES)
+                else:
+                    client_config = {"installed": dict(st.secrets["installed"])}
+                    flow = InstalledAppFlow.from_client_config(client_config, SCOPES)
                 creds = flow.run_local_server(port=0)
         else:
-            flow = InstalledAppFlow.from_client_secrets_file('client_secret.json', SCOPES)
+            if os.path.exists('client_secret.json'):
+                flow = InstalledAppFlow.from_client_secrets_file('client_secret.json', SCOPES)
+            else:
+                client_config = {"installed": dict(st.secrets["installed"])}
+                flow = InstalledAppFlow.from_client_config(client_config, SCOPES)
             creds = flow.run_local_server(port=0)
 
         with open('token.json', 'w') as token:
@@ -381,7 +391,6 @@ if aba == "📦 Lançar Movimentação":
                         st.cache_data.clear()
                         st.success(f"✅ Saída em lote concluída para {len(itens_saida_validos)} itens!")
 
-# --- CONSULTA DE ESTOQUE COM ALTURA EXPANDIDA ---
 elif aba == "📊 Consultar Estoque":
     st.header("Estoque Atual")
 
@@ -466,7 +475,6 @@ elif aba == "📊 Consultar Estoque":
 
             df_estilizado = df[colunas_exibicao].style.apply(destacar_estoque_minimo, axis=1)
 
-            # ALTURA DEFINIDA PARA 700PX (EXIBE MUITO MAIS LINHAS SEM ROLAR)
             st.dataframe(
                 df_estilizado,
                 height=700,
@@ -486,7 +494,6 @@ elif aba == "📊 Consultar Estoque":
     else:
         st.info("Estoque vazio.")
 
-# --- HISTÓRICO COM ALTURA EXPANDIDA ---
 elif aba == "📋 Histórico":
     st.header("Histórico de Movimentações")
     
@@ -513,7 +520,6 @@ elif aba == "📋 Histórico":
         if 'NF_Saida_File' in df_mov.columns:
             df_mov['NF_Saida_File'] = df_mov['NF_Saida_File'].apply(extrair_url)
 
-        # ALTURA DEFINIDA PARA 700PX
         st.dataframe(
             df_mov.head(200),
             height=700,
@@ -531,7 +537,6 @@ elif aba == "📋 Histórico":
     else:
         st.info("Nenhuma movimentação registrada.")
 
-# --- ÁREA TÉCNICA COM ALTURA EXPANDIDA ---
 elif aba == "🛠️ Área Técnica":
     st.header("🛠️ Controle da Área Técnica (Bancada & Campo)")
 
@@ -665,7 +670,6 @@ elif aba == "🛠️ Área Técnica":
                 df_tec.insert(0, "Devolver?", False)
                 df_tec["_Row_Idx"] = df_tec.index + 2
 
-                # ALTURA DEFINIDA PARA 600PX
                 df_tec_edit = st.data_editor(
                     df_tec,
                     height=600,
