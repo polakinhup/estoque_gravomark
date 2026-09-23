@@ -6,7 +6,8 @@ import io
 import re
 import time
 from datetime import datetime
-from google.oauth2.credentials import Credentials
+from google.oauth2.service_account import Credentials
+from google.oauth2.credentials import Credentials as UserCredentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
@@ -30,39 +31,24 @@ SCOPES = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapi
 
 @st.cache_resource
 def conectar_google():
-    creds = None
-    if os.path.exists('token.json'):
-        try:
-            creds = Credentials.from_authorized_user_file('token.json', SCOPES)
-        except Exception:
-            os.remove('token.json')
-            creds = None
-
-    if not creds or not creds.valid:
+    # 1. Tenta carregar credenciais de Service Account via Secrets (Modo Nuvem / Streamlit Cloud)
+    if "gcp_service_account" in st.secrets:
+        creds = Credentials.from_service_account_info(
+            st.secrets["gcp_service_account"],
+            scopes=SCOPES
+        )
+    # 2. Tenta usar token local se existir
+    elif os.path.exists('token.json'):
+        creds = UserCredentials.from_authorized_user_file('token.json', SCOPES)
         if creds and creds.expired and creds.refresh_token:
-            try:
-                creds.refresh(Request())
-            except Exception:
-                if os.path.exists('token.json'):
-                    os.remove('token.json')
-                
-                # Tenta ler do client_secret local ou das Secrets do Streamlit Cloud
-                if os.path.exists('client_secret.json'):
-                    flow = InstalledAppFlow.from_client_secrets_file('client_secret.json', SCOPES)
-                else:
-                    client_config = {"installed": dict(st.secrets["installed"])}
-                    flow = InstalledAppFlow.from_client_config(client_config, SCOPES)
-                creds = flow.run_local_server(port=0)
-        else:
-            if os.path.exists('client_secret.json'):
-                flow = InstalledAppFlow.from_client_secrets_file('client_secret.json', SCOPES)
-            else:
-                client_config = {"installed": dict(st.secrets["installed"])}
-                flow = InstalledAppFlow.from_client_config(client_config, SCOPES)
-            creds = flow.run_local_server(port=0)
-
-        with open('token.json', 'w') as token:
-            token.write(creds.to_json())
+            creds.refresh(Request())
+    # 3. Fallback Local
+    elif os.path.exists('client_secret.json'):
+        flow = InstalledAppFlow.from_client_secrets_file('client_secret.json', SCOPES)
+        creds = flow.run_local_server(port=0)
+    else:
+        st.error("Credenciais de acesso não foram encontradas no servidor.")
+        st.stop()
 
     client_sheets = gspread.authorize(creds)
     drive_service = build('drive', 'v3', credentials=creds)
@@ -281,7 +267,7 @@ if aba == "📦 Lançar Movimentação":
                     st.cache_data.clear()
                     st.success(f"✅ Lote registrado com sucesso! {len(itens_validos)} itens adicionados ao estoque.")
 
-    else: # SAÍDA EM MASSA
+    else:
         opcoes_saida_disponiveis = []
         for r in dados_estoque_atual:
             c_item = str(r.get('Codigo_Peca', '')).replace("'", "").replace("*", "").replace("🛠️", "").strip()
