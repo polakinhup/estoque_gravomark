@@ -29,30 +29,33 @@ st.set_page_config(
 st.markdown(
     """
     <style>
-    /* Oculta cabeçalhos e rodapés gerais */
-    header, footer, [data-testid="stHeader"], [data-testid="stFooter"] {
-        display: none !important;
-        height: 0px !important;
-    }
-
-    /* Oculta barra inferior de modo embutido */
-    div[class*="stAppEmbed"] {
-        padding-bottom: 0px !important;
-    }
+    /* 1. Oculta o cabeçalho superior e menus do Streamlit */
+    header { display: none !important; }
+    [data-testid="stHeader"] { display: none !important; }
+    #MainMenu { display: none !important; }
     
-    div[data-testid="stBottom"], div[class*="viewerBadge"] {
-        display: none !important;
-    }
-
-    /* Remove espaçamentos extras da página */
-    .main .block-container {
-        padding-top: 1rem !important;
-        padding-bottom: 0rem !important;
-    }
+    /* 2. Oculta totalmente o rodapé, a barra do modo Embed e o botão Fullscreen */
+    footer { display: none !important; }
+    [data-testid="stFooter"] { display: none !important; }
+    [data-testid="stBottom"] { display: none !important; }
+    .stAppEmbedFooter { display: none !important; }
+    div[class*="stAppEmbedFooter"] { display: none !important; }
+    
+    /* 3. Oculta botões e widgets flutuantes do desenvolvedor */
+    [data-testid="stStatusWidget"] { display: none !important; }
+    [data-testid="stAppViewerToolbar"] { display: none !important; }
+    .stAppToolbar { display: none !important; }
+    div[class*="viewerBadge"] { display: none !important; }
+    
+    /* 4. Ajusta a margem do topo e da base para preencher a tela inteira */
+    .block-container { padding-top: 1rem !important; padding-bottom: 0rem !important; }
+    [data-testid="stSidebar"] { padding-top: 1rem !important; }
+    [data-testid="stSidebarHeader"] { display: none !important; }
     </style>
     """,
     unsafe_allow_html=True
 )
+
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
 
 @st.cache_resource
