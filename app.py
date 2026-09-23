@@ -31,54 +31,24 @@ SCOPES = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapi
 @st.cache_resource
 def conectar_google():
     creds = None
-    if os.path.exists('token.json'):
+    # 1. Tenta carregar credenciais diretamente via Secrets (Servidor Cloud)
+    if "google_token" in st.secrets:
+        token_info = dict(st.secrets["google_token"])
+        creds = Credentials.from_authorized_user_info(token_info, SCOPES)
+    # 2. Tenta carregar token local do ficheiro
+    elif os.path.exists('token.json'):
+        creds = Credentials.from_authorized_user_file('token.json', SCOPES)
+
+    # Atualiza o token expirado se necessário
+    if creds and creds.expired and creds.refresh_token:
         try:
-            creds = Credentials.from_authorized_user_file('token.json', SCOPES)
+            creds.refresh(Request())
         except Exception:
-            os.remove('token.json')
             creds = None
 
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            try:
-                creds.refresh(Request())
-            except Exception:
-                if os.path.exists('token.json'):
-                    os.remove('token.json')
-                
-                if "client_secret" in st.secrets:
-                    client_config = {"installed": dict(st.secrets["client_secret"])}
-                    flow = InstalledAppFlow.from_client_config(client_config, SCOPES)
-                elif os.path.exists('client_secret.json'):
-                    flow = InstalledAppFlow.from_client_secrets_file('client_secret.json', SCOPES)
-                else:
-                    st.error("Credenciais client_secret não foram encontradas.")
-                    st.stop()
-                creds = flow.run_local_server(port=0, open_browser=False)
-        else:
-            if "client_secret" in st.secrets:
-                client_config = {"installed": dict(st.secrets["client_secret"])}
-                flow = InstalledAppFlow.from_client_config(client_config, SCOPES)
-            elif os.path.exists('client_secret.json'):
-                flow = InstalledAppFlow.from_client_secrets_file('client_secret.json', SCOPES)
-            else:
-                st.error("Credenciais client_secret não foram encontradas.")
-                st.stop()
-
-            try:
-                creds = flow.run_local_server(port=0, open_browser=False)
-            except Exception:
-                auth_url, _ = flow.authorization_url(prompt='consent')
-                st.info("É necessária a autorização do Google para o primeiro acesso:")
-                st.markdown(f"[🔗 Clique aqui para autorizar a ligação com o Google Sheets]({auth_url})")
-                st.stop()
-
-        if creds:
-            try:
-                with open('token.json', 'w') as token:
-                    token.write(creds.to_json())
-            except Exception:
-                pass
+    if not creds:
+        st.error("Erro nas credenciais de acesso ao Google. Verifique o registro em Secrets.")
+        st.stop()
 
     client_sheets = gspread.authorize(creds)
     drive_service = build('drive', 'v3', credentials=creds)
@@ -762,4 +732,4 @@ elif aba == "🛠️ Área Técnica":
             else:
                 st.info("Nenhuma peça atualmente na área técnica.")
         else:
-            st.info("Nenum registro de área técnica.")
+            st.info("Nenhum registro de área técnica.")
