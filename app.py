@@ -29,27 +29,23 @@ st.set_page_config(
 st.markdown(
     """
     <style>
-    /* 1. Oculta o cabeçalho superior e menus do Streamlit */
-    header { display: none !important; }
+    /* Oculta o cabeçalho superior e o menu */
+    header { visibility: hidden !important; display: none !important; }
     [data-testid="stHeader"] { display: none !important; }
-    #MainMenu { display: none !important; }
+    #MainMenu { visibility: hidden !important; display: none !important; }
     
-    /* 2. Oculta totalmente o rodapé, a barra do modo Embed e o botão Fullscreen */
-    footer { display: none !important; }
+    /* Oculta o rodapé e badges */
+    footer { visibility: hidden !important; display: none !important; }
     [data-testid="stFooter"] { display: none !important; }
-    [data-testid="stBottom"] { display: none !important; }
-    .stAppEmbedFooter { display: none !important; }
-    div[class*="stAppEmbedFooter"] { display: none !important; }
     
-    /* 3. Oculta botões e widgets flutuantes do desenvolvedor */
+    /* Oculta widgets do status do desenvolvedor */
     [data-testid="stStatusWidget"] { display: none !important; }
     [data-testid="stAppViewerToolbar"] { display: none !important; }
     .stAppToolbar { display: none !important; }
-    div[class*="viewerBadge"] { display: none !important; }
     
-    /* 4. Ajusta a margem do topo e da base para preencher a tela inteira */
-    .block-container { padding-top: 1rem !important; padding-bottom: 0rem !important; }
-    [data-testid="stSidebar"] { padding-top: 1rem !important; }
+    /* Ajustes das margens superiores para preencher a tela */
+    .block-container { padding-top: 1.5rem !important; }
+    [data-testid="stSidebar"] { padding-top: 1.5rem !important; }
     [data-testid="stSidebarHeader"] { display: none !important; }
     </style>
     """,
