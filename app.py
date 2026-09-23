@@ -11,7 +11,7 @@ from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload
 
-st.set_page_config(page_title="Controle de Estoque 02.08", page_icon="📦", layout="wide")
+st.set_page_config(page_title="Estoque Gravomark 02.08", page_icon="📦", layout="wide")
 
 st.markdown(
     """
