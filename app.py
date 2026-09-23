@@ -16,25 +16,40 @@ import streamlit as st
 # 1. Usando a imagem desejada como ícone da página
 NOME_DO_ICONE = "LOGO PNG COM FUNDO.png"  # Coloque o nome exato do arquivo aqui
 
+import streamlit as st
+
+# 1. Configuração da página
 st.set_page_config(
     page_title="Estoque GravoMark 02.08", 
-    page_icon="LOGO PNG COM FUNDO", 
+    page_icon="LOGO PNG COM FUNDO.png", 
     layout="wide"
 )
 
-# 2. Forçando o nome da empresa e a imagem na criação do PWA / Atalho
+# 2. CSS para remover o ícone do GitHub, menu do topo, rodapé e botões flutuantes
 st.markdown(
-    f"""
-    <head>
-        <link rel="apple-touch-icon" href="{NOME_DO_ICONE}">
-        <link rel="shortcut icon" href="{NOME_DO_ICONE}">
-        <meta name="apple-mobile-web-app-title" content="Estoque GravoMark">
-        <meta name="application-name" content="Estoque GravoMark">
-    </head>
+    """
+    <style>
+    /* Oculta o cabeçalho superior (botão do GitHub / Fork / Menu) */
+    header { visibility: hidden !important; }
+    
+    /* Oculta o rodapé padrão do Streamlit */
+    footer { visibility: hidden !important; }
+    
+    /* Oculta botões flutuantes e o ícone vermelho do canto inferior direito */
+    [data-testid="stStatusWidget"] { display: none !important; }
+    [data-testid="stAppViewerToolbar"] { display: none !important; }
+    .stAppToolbar { display: none !important; }
+    #MainMenu { visibility: hidden !important; }
+    
+    /* Ajusta o espaçamento superior após ocultar o cabeçalho */
+    .block-container { padding-top: 1.5rem !important; }
+    [data-testid="stSidebar"] { padding-top: 1.5rem !important; }
+    [data-testid="stSidebarHeader"] { display: none !important; padding: 0px !important; }
+    [data-testid="stSidebarUserContent"] { padding-top: 0rem !important; }
+    </style>
     """,
     unsafe_allow_html=True
 )
-
 st.markdown(
     """
     <style>
