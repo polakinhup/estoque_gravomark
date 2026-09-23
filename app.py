@@ -7,7 +7,6 @@ import re
 import time
 from datetime import datetime
 from google.oauth2.credentials import Credentials
-from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload
@@ -31,15 +30,12 @@ SCOPES = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapi
 @st.cache_resource
 def conectar_google():
     creds = None
-    # 1. Tenta carregar credenciais diretamente via Secrets (Servidor Cloud)
     if "google_token" in st.secrets:
         token_info = dict(st.secrets["google_token"])
         creds = Credentials.from_authorized_user_info(token_info, SCOPES)
-    # 2. Tenta carregar token local do ficheiro
     elif os.path.exists('token.json'):
         creds = Credentials.from_authorized_user_file('token.json', SCOPES)
 
-    # Atualiza o token expirado se necessário
     if creds and creds.expired and creds.refresh_token:
         try:
             creds.refresh(Request())
