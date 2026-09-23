@@ -11,7 +11,29 @@ from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload
 
-st.set_page_config(page_title="Estoque Gravomark 02.08", page_icon="📦", layout="wide")
+import streamlit as st
+
+# 1. Usando a imagem desejada como ícone da página
+NOME_DO_ICONE = "LOGO PNG COM FUNDO.png"  # Coloque o nome exato do arquivo aqui
+
+st.set_page_config(
+    page_title="Estoque GravoMark 02.08", 
+    page_icon="LOGO PNG COM FUNDO", 
+    layout="wide"
+)
+
+# 2. Forçando o nome da empresa e a imagem na criação do PWA / Atalho
+st.markdown(
+    f"""
+    <head>
+        <link rel="apple-touch-icon" href="{NOME_DO_ICONE}">
+        <link rel="shortcut icon" href="{NOME_DO_ICONE}">
+        <meta name="apple-mobile-web-app-title" content="Estoque GravoMark">
+        <meta name="application-name" content="Estoque GravoMark">
+    </head>
+    """,
+    unsafe_allow_html=True
+)
 
 st.markdown(
     """
