@@ -89,7 +89,7 @@ SPREADSHEET_ID = "1mnR2hraUpJm5KIQRLk4JOCU35zTKgPaelr02CjxJ248"
 FOLDER_ENTRADA_ID = "14b0Dp4LEEftPMIUkVxDd_0JFKGJhRbWL"
 FOLDER_SAIDA_ID = "1iFmbto3DIRKW83SdON-QaMXTDrfrRmcx"
 
-@st.cache_data(ttl=30)
+@st.cache_data(ttl=60)
 def ler_dados_planilha(nome_aba, usar_formula=False):
     aba = client_sheets.open_by_key(SPREADSHEET_ID).worksheet(nome_aba)
     if usar_formula:
