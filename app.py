@@ -11,13 +11,6 @@ from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload
 
-import streamlit as st
-
-# 1. Usando a imagem desejada como ícone da página
-NOME_DO_ICONE = "LOGO PNG COM FUNDO.png"  # Coloque o nome exato do arquivo aqui
-
-import streamlit as st
-
 # 1. Configuração da página
 st.set_page_config(
     page_title="Estoque GravoMark 02.08", 
@@ -84,7 +77,7 @@ def conectar_google():
 
 client_sheets, drive_service = conectar_google()
 
-# --- COLE OS SEUS IDs REAIS AQUI ---
+# --- IDs REAIS DO GOOGLE DRIVE / SHEETS ---
 SPREADSHEET_ID = "1mnR2hraUpJm5KIQRLk4JOCU35zTKgPaelr02CjxJ248"
 FOLDER_ENTRADA_ID = "14b0Dp4LEEftPMIUkVxDd_0JFKGJhRbWL"
 FOLDER_SAIDA_ID = "1iFmbto3DIRKW83SdON-QaMXTDrfrRmcx"
@@ -273,7 +266,7 @@ if aba == "📦 Lançar Movimentação":
 
                     for item in itens_validos:
                         c_seg = f"'{item['codigo']}"
-                        novas_linhas_mov.append([data_hora_segura, "Entrada", nf_formatada, c_seg, item["descricao"], item["qtd"], link_arquivo, ""])
+                        novas_linhas_mov.append([data_hora_segura, "Entrada", nf_formatada, c_seg, item["descricao"], item["qtd"], link_arquivo, "", ""])
 
                         for idx_e, row_e in enumerate(dados_est_cru):
                             if str(row_e.get('Codigo_Peca', '')).replace("'", "").strip() == item['codigo'].strip() and str(row_e.get('Nota_Fiscal', '')).strip().lstrip('0') == nf_formatada.strip():
@@ -383,7 +376,7 @@ if aba == "📦 Lançar Movimentação":
 
                         for item_s in itens_saida_validos:
                             c_seg = f"'{item_s['codigo']}"
-                            novas_linhas_mov_s.append([data_hora_segura, "Saida", item_s["nf_origem"], c_seg, item_s["descricao"], item_s["qtd"], "", link_saida])
+                            novas_linhas_mov_s.append([data_hora_segura, "Saida", item_s["nf_origem"], c_seg, item_s["descricao"], item_s["qtd"], "", link_saida, ""])
 
                             for idx_e, row_e in enumerate(dados_est_cru):
                                 cod_e = str(row_e.get('Codigo_Peca', '')).replace("'", "").replace("*", "").replace("🛠️", "").strip()
@@ -491,7 +484,7 @@ elif aba == "📊 Consultar Estoque":
 
             st.dataframe(
                 df_estilizado,
-                height=700,
+                height=600,
                 use_container_width=True,
                 column_config={
                     "Codigo_Formatado": st.column_config.TextColumn("Código da Peça (🛠️=Na Técnica | *=Várias NFs)"),
@@ -503,6 +496,24 @@ elif aba == "📊 Consultar Estoque":
                 },
                 hide_index=True
             )
+
+            # --- BOTÃO DE DOWNLOAD DIRETO EM EXCEL FORMATADO (.XLSX) ---
+            df_exportar = df[colunas_exibicao].copy()
+            buffer_excel = io.BytesIO()
+            
+            with pd.ExcelWriter(buffer_excel, engine='xlsxwriter') as writer:
+                df_exportar.to_excel(writer, sheet_name='Estoque_Atual', index=False)
+
+            st.divider()
+            st.download_button(
+                label="📊 Baixar Estoque Formatado em Excel (.xlsx)",
+                data=buffer_excel.getvalue(),
+                file_name=f"Estoque_GravoMark_{datetime.now().strftime('%d_%m_%Y')}.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                type="primary",
+                use_container_width=True
+            )
+
         else:
             st.info("Nenhum item com saldo positivo no estoque no momento.")
     else:
@@ -511,9 +522,11 @@ elif aba == "📊 Consultar Estoque":
 elif aba == "📋 Histórico":
     st.header("Histórico de Movimentações")
     
-    if st.button("🔄 Atualizar Histórico", use_container_width=False):
-        st.cache_data.clear()
-        st.rerun()
+    col_hist1, col_hist2 = st.columns([4, 1])
+    with col_hist2:
+        if st.button("🔄 Atualizar Histórico", use_container_width=True):
+            st.cache_data.clear()
+            st.rerun()
 
     dados_mov = ler_dados_planilha("Movimentacoes", usar_formula=True)
 
@@ -536,18 +549,85 @@ elif aba == "📋 Histórico":
 
         st.dataframe(
             df_mov.head(200),
-            height=700,
+            height=500,
             use_container_width=True,
             column_config={
                 "Data_Hora": st.column_config.TextColumn("Data e Hora"),
                 "Tipo_Movimentacao": st.column_config.TextColumn("Operação / Status"),
+                "Nota_Fiscal": st.column_config.TextColumn("NF / Doc"),
                 "Codigo_Peca": st.column_config.TextColumn("Código da Peça"),
                 "Descricao": st.column_config.TextColumn("Descrição", width="large"),
+                "Quantidade": st.column_config.NumberColumn("Qtd", width="small"),
                 "NF_Entrada_File": st.column_config.LinkColumn("NF Entrada", display_text="🔗 Abrir NF", width="small"),
-                "NF_Saida_File": st.column_config.LinkColumn("NF Saída", display_text="🔗 Abrir Doc", width="small")
+                "NF_Saida_File": st.column_config.LinkColumn("NF Saída", display_text="🔗 Abrir Doc", width="small"),
+                "Area_Tecnica": st.column_config.TextColumn("Área Técnica / Detalhes", width="medium")
             },
             hide_index=True
         )
+
+        st.divider()
+        st.subheader("✏️ Anexar / Editar NF ou Link em Registro Antigo")
+        st.caption("Pesquise abaixo pelo número da NF, código ou descrição da peça para anexar a NF.")
+
+        opcoes_linhas = []
+        mapa_linhas = {}
+
+        for idx_m, rm in enumerate(dados_mov[:150]):
+            num_linha = idx_m + 2
+            nf_m = str(rm.get("Nota_Fiscal", "")).strip()
+            cod_m = str(rm.get("Codigo_Peca", "")).replace("'", "").strip()
+            desc_m = str(rm.get("Descricao", "")).strip()
+            tp_m = str(rm.get("Tipo_Movimentacao", "")).strip()
+
+            desc_curta = (desc_m[:25] + '...') if len(desc_m) > 25 else desc_m
+            rotulo = f"NF: {nf_m} | Peça: {cod_m} | {desc_curta} ({tp_m}) [L- {num_linha}]"
+            
+            opcoes_linhas.append(rotulo)
+            mapa_linhas[rotulo] = num_linha
+
+        if opcoes_linhas:
+            col_sel_lin, col_up_nf, col_link_manual = st.columns([4, 3, 3])
+            
+            with col_sel_lin:
+                linha_selecionada_rotulo = st.selectbox(
+                    "Selecione o registro (Pesquise por NF, Código ou Descrição):", 
+                    options=[""] + opcoes_linhas
+                )
+            
+            with col_up_nf:
+                arquivo_edit_nf = st.file_uploader("Upload do PDF pro Drive:", type=["pdf"], key="upload_edit_nf")
+            
+            with col_link_manual:
+                link_manual_input = st.text_input("OU cole o Link do Drive:", placeholder="https://drive.google.com/...")
+
+            if st.button("💾 Salvar NF no Registro Selecionado", type="primary", use_container_width=True):
+                if not linha_selecionada_rotulo:
+                    st.error("Selecione um registro na lista acima.")
+                elif not arquivo_edit_nf and not link_manual_input.strip():
+                    st.error("Faça o upload do PDF ou cole o link manual da NF.")
+                else:
+                    with st.spinner("Atualizando registro da NF..."):
+                        num_linha = mapa_linhas[linha_selecionada_rotulo]
+                        sheet_mov = client_sheets.open_by_key(SPREADSHEET_ID).worksheet("Movimentacoes")
+
+                        link_final = ""
+                        if arquivo_edit_nf is not None:
+                            pasta_id = FOLDER_ENTRADA_ID
+                            file_metadata = {'name': arquivo_edit_nf.name, 'parents': [pasta_id]}
+                            media = MediaIoBaseUpload(io.BytesIO(arquivo_edit_nf.getvalue()), mimetype=arquivo_edit_nf.type)
+                            arquivo_salvo = drive_service.files().create(body=file_metadata, media_body=media, fields='id').execute()
+                            url_b = f"https://drive.google.com/file/d/{arquivo_salvo.get('id')}/view"
+                            link_final = f'=HYPERLINK("{url_b}"; "📄 Abrir NF")'
+                        elif link_manual_input.strip():
+                            url_b = link_manual_input.strip()
+                            link_final = f'=HYPERLINK("{url_b}"; "📄 Abrir NF")'
+
+                        sheet_mov.update_cell(num_linha, 7, link_final)
+                        st.cache_data.clear()
+                        st.success("✅ NF/Link atualizado com sucesso no registro!")
+                        time.sleep(1.5)
+                        st.rerun()
+
     else:
         st.info("Nenhuma movimentação registrada.")
 
@@ -641,7 +721,8 @@ elif aba == "🛠️ Área Técnica":
 
                             for item_t in itens_transferir:
                                 c_seg = f"'{item_t['codigo']}"
-                                novas_linhas_mov_t.append([data_hora_segura, "Área Técnica", item_t["nf_origem"], c_seg, item_t["descricao"], item_t["qtd"], "", f"OS: {pedido_os} | Técnico: {nome_tecnico}"])
+                                info_tec = f"OS: {pedido_os} | Técnico: {nome_tecnico}"
+                                novas_linhas_mov_t.append([data_hora_segura, "Área Técnica", item_t["nf_origem"], c_seg, item_t["descricao"], item_t["qtd"], "", "", info_tec])
 
                                 for idx_e, row_e in enumerate(dados_est_cru):
                                     cod_e = str(row_e.get('Codigo_Peca', '')).replace("'", "").replace("*", "").replace("🛠️", "").strip()
@@ -733,7 +814,7 @@ elif aba == "🛠️ Área Técnica":
                                 desc_d = str(row_d.get('Descricao', '')).strip()
 
                                 c_seg = f"'{c_d}"
-                                novas_mov_dev.append([data_hora_segura, "Retorno Técnica", nf_d, c_seg, desc_d, q_d, "", "Retornou da bancada/campo"])
+                                novas_mov_dev.append([data_hora_segura, "Retorno Técnica", nf_d, c_seg, desc_d, q_d, "", "", "Retornou da bancada/campo"])
 
                                 for idx_e, row_e in enumerate(dados_est_cru):
                                     cod_e = str(row_e.get('Codigo_Peca', '')).replace("'", "").replace("*", "").replace("🛠️", "").strip()
